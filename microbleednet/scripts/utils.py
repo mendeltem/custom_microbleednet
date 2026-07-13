@@ -108,3 +108,16 @@ def load_model(checkpoint_path, model, mode='weights'):
     model.load_state_dict(axial_state_dict)
     
     return model
+
+
+def load_model(checkpoint_path, model, mode='weights'):
+    if mode == 'weights':
+        axial_state_dict = torch.load(checkpoint_path)
+    else:  # 'full_model'
+        checkpoint = torch.load(checkpoint_path)
+        axial_state_dict = checkpoint['model_state_dict']
+    model.load_state_dict(axial_state_dict)
+    return model
+
+
+

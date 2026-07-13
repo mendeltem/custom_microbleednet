@@ -108,6 +108,21 @@ def main(subjects, finetune_params, perform_augmentation=True, save_checkpoint=T
     print(f'Total parameters in candidate discriminatino model: {sum([p.numel() for p in student_model.parameters()])}')
 
     student_model = utils.freeze_layers_for_finetuning(student_model, layers_to_finetune, verbose=verbose)
+
+    # FIX: freeze_layers_for_finetuning() maps -ftlayers onto CDet U-Net layer names
+    # ('outconv', 'up1', ..., 'convfirst'), which do NOT include the CDisc student's
+    # classifier head (classconvfirst, classdown1, classdown2, fc1, fc2, fc3). As a
+    # result the head that decides positive-vs-negative stays frozen no matter what
+    # -ftlayers is passed, and CDisc collapses to predicting all-negative (accuracy
+    # pinned at 0.5, 0 positives). Explicitly unfreeze the discrimination head so it
+    # can learn. Must run BEFORE trainable_parameters is collected below.
+    for layer_name, child in student_model.named_children():
+        if layer_name.startswith('class') or layer_name.startswith('fc'):
+            for param in child.parameters():
+                param.requires_grad = True
+            if verbose:
+                print(f'Model parameters in {layer_name} are unfrozen (classifier head fix)')
+
     student_model.to(device=device)
 
     trainable_parameters = list(filter(lambda p: p.requires_grad, student_model.parameters()))
@@ -134,8 +149,11 @@ def main(subjects, finetune_params, perform_augmentation=True, save_checkpoint=T
         print(f'Num tp patches: {len(tp_patches_store)}, Num fp patches: {len(fp_patches_store)}')
 
     train_patches_store, validation_patches_store = utils.split_patches(tp_patches_store, fp_patches_store, train_proportion)
-    train_set = datasets.CDiscPatchDataset(train_patches_store['negative'], train_patches_store['positive'], perform_augmentations=True)
-    validation_set = datasets.CDiscPatchDataset(validation_patches_store['negative'], validation_patches_store['positive'])
+    # train_set = datasets.CDiscPatchDataset(train_patches_store['negative'], train_patches_store['positive'], perform_augmentations=True)
+    # validation_set = datasets.CDiscPatchDataset(validation_patches_store['negative'], validation_patches_store['positive'])
+
+    train_set = datasets.CDiscPatchDataset(train_patches_store['positive'], train_patches_store['negative'], ratio='1:1', perform_augmentations=True)
+    validation_set = datasets.CDiscPatchDataset(validation_patches_store['positive'], validation_patches_store['negative'], ratio='1:1')
 
     if verbose:
         print(f'Num training patches: {len(train_set)}, Num validation patches: {len(validation_set)}')

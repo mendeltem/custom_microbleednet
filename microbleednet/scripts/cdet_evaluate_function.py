@@ -49,10 +49,12 @@ def main(subjects, verbose=True, model_directory=None, model_name='microbleednet
     # Load candidate detection model
     try:
         model_path = os.path.join(model_directory, f'{model_name}_cdet_model.pth')
+        print(f"model path : {model_path} ")
         model = utils.load_model(model_path, model)
     except:
         try:
             model_path = os.path.join(model_directory, f'{model_name}_cdet_model_weights.pth')
+            print(f"model path : {model_path} ")
             model = utils.load_model(model_path, model, mode='weights')
         except ImportError:
             raise ImportError(f'In directory, {model_directory}, {model_name}_cdet_model.pth or {model_name}_cdet_model_weights.pth does not appear to be a valid model file.')

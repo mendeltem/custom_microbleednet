@@ -546,7 +546,7 @@ def fine_tune(args):
         print('Finetuned CDet.')
 
     if args.cand_discrimination:
-        cdisc_finetune_function.main(subjects, finetune_params, aug=args.data_augmentation, save_cp=True, save_wei=save_weights, save_case=args.cp_save_type, verbose=args.verbose, model_dir=model_directory, dir_cp=output_directory)
+        cdisc_finetune_function.main(subjects, finetune_params, perform_augmentation=args.data_augmentation, save_checkpoint=True, save_weights=save_weights, save_case=args.cp_save_type, verbose=args.verbose, model_directory=model_directory, checkpoint_directory=output_directory)
 
     if args.verbose:
         print('Finetuned CDisc.')
